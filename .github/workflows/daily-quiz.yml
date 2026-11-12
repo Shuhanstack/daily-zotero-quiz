@@ -1,0 +1,70 @@
+name: Daily quiz
+
+on:
+  schedule:
+    # GitHub may delay or drop scheduled runs, especially at :00, so there are three
+    # off-peak tries. The first one to run sends the quiz; the others see today's
+    # entry in state.json and exit (--skip-if-sent-today).
+    # Cron is UTC and ignores DST: 14:37 UTC = 6:37am PST / 7:37am PDT.
+    - cron: "37 14 * * *"
+    - cron: "23 15 * * *"
+    - cron: "41 16 * * *"
+  workflow_dispatch:
+    inputs:
+      refresh_library:
+        description: "Re-fetch the Zotero item list now (otherwise it refreshes every 30 days)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-quiz
+  cancel-in-progress: false
+
+jobs:
+  quiz:
+    # Don't run in the public template itself (it has no secrets); copies made from it run normally.
+    if: github.repository != 'Shuhanstack/daily-zotero-quiz'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install
+        run: pip install -e .
+
+      - name: Run quiz
+        env:
+          ZOTERO_API_KEY: ${{ secrets.ZOTERO_API_KEY }}
+          ZOTERO_USER_ID: ${{ secrets.ZOTERO_USER_ID }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+          ERROR_EMAIL: ${{ secrets.ERROR_EMAIL }}
+        # Manual runs always send; scheduled runs skip if today's quiz already went out.
+        run: >-
+          python -m quiz.main
+          ${{ inputs.refresh_library && '--refresh-library' || '' }}
+          ${{ github.event_name == 'schedule' && '--skip-if-sent-today' || '' }}
+
+      - name: Commit state.json, new summaries and library cache
+        if: always()  # keep a new summary even if the email step failed
+        run: |
+          if [ -z "$(git status --porcelain -- state.json summaries library.json)" ]; then
+            echo "state.json, summaries and library.json unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for f in state.json summaries library.json; do if [ -e "$f" ]; then git add "$f"; fi; done
+          git commit -m "Record quiz for $(date -u +%F)"
+          git push

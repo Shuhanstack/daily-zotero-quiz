@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "daily-zotero-quiz"
+version = "0.1.0"
+description = "A daily email quiz on one paper from your Zotero library, written by Claude and run on GitHub Actions"
+readme = "README.md"
+license = { file = "LICENSE" }
+keywords = ["zotero", "quiz", "spaced-repetition", "active-recall", "research", "claude", "anthropic", "github-actions", "email", "literature-review"]
+requires-python = ">=3.12"
+dependencies = [
+    "pyzotero>=1.5",
+    "anthropic>=2.7",
+    "pydantic>=2.6",
+    "jinja2>=3.1",
+    "python-dotenv>=1.0",
+    "certifi",
+]
+
+[project.urls]
+Homepage = "https://github.com/Shuhanstack/daily-zotero-quiz"
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
