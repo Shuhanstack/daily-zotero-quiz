@@ -28,11 +28,12 @@ Five questions on top (2 multiple choice, 2 true/false, 1 open-ended), with the 
 
 ## How it works
 
-```
-Zotero library ──► pick today's paper ──► summary (once per paper) ──► 5 questions ──► Gmail ──► your inbox
-                   (newest unseen first)   10–15 claims, each with a      built only from
-                                           quote checked against the      those checked claims
-                                           paper text
+```mermaid
+flowchart LR
+    A[("Zotero<br>library")] --> B["Pick today's paper<br><small>newest unseen first</small>"]
+    B --> C["Summarize once per paper<br><small>10–15 claims, each quote<br>checked against the text</small>"]
+    C --> D["Write 5 questions<br><small>only from checked claims</small>"]
+    D --> E(["📬 Your inbox<br><small>via Gmail</small>"])
 ```
 
 1. **Pick a paper** from your Zotero *My Library* (journal articles, conference papers, preprints, reports, theses, books and book sections). Papers that have never been quizzed come first, newest first; after that, the one quizzed longest ago.
